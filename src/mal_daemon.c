@@ -30,12 +30,9 @@
 
 #include "mal_daemon.h"
 
-typedef enum {
-	running,
-	stopped
-} RunState;
-
 RunState run_state;
+
+RunMode run_mode;
 
 const char *pidfile = "/var/run/" PACKAGE_NAME;
 pid_t pid;
@@ -67,6 +64,7 @@ int loop()
 		usleep(SUPER_LOOP_TIMER);
 	}
 	
+	sql_close();
 	Log(LOG_INFO, "Shutting down.");
 	delete_pid_file();
 	return 0;
@@ -74,8 +72,8 @@ int loop()
 
 int main(int argc, char *argv[]) 
 {
-	process_args(argc, argv);
-	
+	run_mode = mode_daemon;
+	process_args(argc, argv);	
 	return 0;
 }
 
@@ -177,14 +175,25 @@ int process_args(int argc, char *argv[])
 
 	if (instance)
 	{
+		run_mode = mode_instance;
+
 		log_init();
  		Log(LOG_INFO, PACKAGE_NAME " is starting.");
-		check_config();
+				check_config();
+
+		//handle signals
+	 	struct sigaction act;
+	 	memset(&act, 0, sizeof(act));
+	 	act.sa_handler = sig_handler;
+		if (sigaction(SIGINT, &act, 0) == -1) 
+	 	{
+	 		Log(LOG_ERROR, "Failed to handle SIGINT.");
+	 	}
 		loop();
 		exit(0);
 	}
 
-	if (start) 
+	if ((!stop && !instance) || start) 
 	{
 		daemonize();
 		exit(0);
@@ -225,24 +234,35 @@ void usage() {
 int kill_daemon()
 {
 	pid = read_pid_file();
+
 	if (!pid) 
 	{
 		puts("Not running.");
 		return -1;
 	}
+	
+	char procfile[56];
+	sprintf(procfile, "/proc/%d", pid);
+	struct stat sts;
+	if ((stat(procfile, &sts) == -1 && errno == ENOENT))
+	{
+		puts("Not running.");
+		delete_pid_file();
+		return -1;
+	}
+
+
+	printf("Stopping process with pid %d.\n", pid);
+	if (-1 == kill(pid, SIGTERM))
+	{
+		puts("Failed to stop process. Try as root.");
+	}
 	else 
 	{
-		printf("Stopping process with pid %d.\n", pid);
-		if (-1 == kill(pid, SIGTERM))
-		{
-			puts("Failed to stop process. Try as root.");
-		}
-		else 
-		{
-			puts("Stopped successfully.");
-		}
-		return 0;
+		puts("Stopped successfully.");
 	}
+	return 0;
+	
 }
 
 int daemonize() 
@@ -269,6 +289,8 @@ int daemonize()
  		exit(1);
 	}
 
+	check_config();
+
 	//fork
  	pid = fork();
 
@@ -278,7 +300,6 @@ int daemonize()
 	 		puts("Failed to write pid file.");
 	 		exit(1);
 		}
-		check_config();
 		exit(0);
  	}
 
@@ -311,6 +332,10 @@ void sig_handler(int signo)
 	if (signo == SIGINT) 
 	{
 		Log(LOG_INFO, "received SIGINT");
+		if (run_mode == mode_instance)
+		{
+			run_state = stopped;
+		}
 	}
 	else if (signo == SIGTERM) 
 	{

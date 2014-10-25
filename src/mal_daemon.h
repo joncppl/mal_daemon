@@ -6,10 +6,24 @@
  * Date: October 25, 2014
  * 
  */
+#include <unistd.h>
+
 #ifndef MAL_DAEMON_H
  #define MAL_DAEMON_H
 
 #define SUPER_LOOP_TIMER 1000000 //microsect
+
+typedef enum {
+	running,
+	stopped
+} RunState;
+
+typedef enum {
+	mode_daemon,
+	mode_instance
+} RunMode;
+
+extern RunMode run_mode;
 
 int process_args(int argc, char *argv[]);
 

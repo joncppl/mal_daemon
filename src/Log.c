@@ -10,6 +10,7 @@
  */
 #include "config.h"
 #include "Log.h"
+#include "mal_daemon.h"
 
 #ifdef HAVE_STDIO_H
 #include <stdio.h>
@@ -138,8 +139,11 @@ void Log(int priority, const char *s, ...)
 	END_LOCK
 
 	//print a version to stdout as well.
-	vprintf(s, ap);
-	printf("\n");
+	if (run_mode == mode_instance)
+	{
+		vprintf(s, ap);
+		printf("\n");
+	}
 
 	va_end(ap);
 }
