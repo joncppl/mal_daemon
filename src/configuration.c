@@ -17,6 +17,7 @@
 #include <libconfig.h>
 
 #include "configuration.h"
+#include "mal_daemon.h"
 
 #include "Log.h"
 
@@ -28,6 +29,8 @@
 
 config_t config;
 config_setting_t *root, *mal_username, *mal_password, *db_server, *db_username, *db_password;
+
+
 
 void configure_init() {
 	struct termios oflags, nflags;
@@ -102,7 +105,17 @@ void configure_init() {
 
 int configure_load()
 {
-	if (CONFIG_FALSE == config_read_file(&config, CONFIGURATION_FILENAME))
+	const char *filename;
+	if (run_mode == mode_daemon) 
+	{
+		filename = CONFIGURATION_DAEMON_PATH CONFIGURATION_FILENAME;
+	}
+	else 
+	{
+		filename = CONFIGURATION_FILENAME;
+	}
+
+	if (CONFIG_FALSE == config_read_file(&config, filename))
 	{
 		Log(LOG_ALERT, "Failed to open config file. %s.", config_error_text(&config));
 		return -1;
@@ -121,7 +134,17 @@ int configure_load()
 
 int configure_write() 
 {
-	if (CONFIG_FALSE == config_write_file(&config, CONFIGURATION_FILENAME))
+	const char *filename;
+	if (run_mode == mode_daemon) 
+	{
+		filename = CONFIGURATION_DAEMON_PATH CONFIGURATION_FILENAME;
+	}
+	else 
+	{
+		filename = CONFIGURATION_FILENAME;
+	}
+
+	if (CONFIG_FALSE == config_write_file(&config, filename))
 	{
 		Log(LOG_ERROR, "Failed to write config file. %s", config_error_text(&config));
 		return -1;

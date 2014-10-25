@@ -13,6 +13,8 @@
 
 #define DEBUG 1
 
+#define LOGFILE_DAEMON_PATH "/var/log/"
+
 #define LOGFILE PACKAGE_NAME ".log"
 
 #define STRLEN 256

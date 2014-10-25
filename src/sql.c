@@ -69,8 +69,11 @@ int sql_query(const char* query)
 
 int sql_close() 
 {
-	mysql_close(mysql_connection);
-	Log(LOG_INFO, "Closing sql connection");
+	if (is_connected)
+	{
+		mysql_close(mysql_connection);
+		Log(LOG_INFO, "Closing sql connection");
+	}
 	is_connected = 0;
 	return 0;
 }

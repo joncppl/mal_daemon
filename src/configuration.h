@@ -14,7 +14,9 @@
 
 #define CONFIGURE_STRING_LENGTH 64
 
-#define CONFIGURATION_FILENAME "mald_config"
+#define CONFIGURATION_DAEMON_PATH "/etc/"
+
+#define CONFIGURATION_FILENAME "mal_daemon.config"
 
 void configure_init();
 

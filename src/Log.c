@@ -62,7 +62,17 @@ static pthread_mutex_t log_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int log_init()
 {
-	log = fopen(LOGFILE, "a+");
+	const char *filename;
+	if (run_mode == mode_daemon) 
+	{
+		filename = LOGFILE_DAEMON_PATH LOGFILE;
+	}
+	else 
+	{
+		filename = LOGFILE;
+	}
+
+	log = fopen(filename, "a+");
 	if (!log)
 	{
 		return (0);
@@ -112,6 +122,7 @@ void Log(int priority, const char *s, ...)
 {
 	va_list ap;
 	char *datetime = NULL;
+	char printed[512];
 	if (!log)
 	{
 		return;
@@ -127,22 +138,21 @@ void Log(int priority, const char *s, ...)
 #endif
 
 	va_start(ap, s);
+
 	LOCK(log_mutex);
 
-	datetime = timefmt(datetime, STRLEN);
-	fprintf(log, "[%s] %-8s : ", datetime,
-			logPriorityDescp(priority));
-	vfprintf(log, s, ap);
-	fprintf(log, "\n");
+	vsprintf(printed, s, ap);
 
+	datetime = timefmt(datetime, STRLEN);
+	fprintf(log, "[%s] %-8s : %s\n", datetime,
+			logPriorityDescp(priority), printed);
 	free(datetime);
 	END_LOCK
 
 	//print a version to stdout as well.
 	if (run_mode == mode_instance)
 	{
-		vprintf(s, ap);
-		printf("\n");
+		printf("%s\n", printed);
 	}
 
 	va_end(ap);

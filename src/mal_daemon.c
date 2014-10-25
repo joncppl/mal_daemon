@@ -27,6 +27,7 @@
 #include "Log.h"
 #include "sql.h"
 #include "configuration.h"
+#include "download.h"
 
 #include "mal_daemon.h"
 
@@ -41,23 +42,26 @@ pid_t pid;
 unsigned short run_config = 0; //bool
 
 int loop() 
-{
-	//startup
-	printf("%s version %s.\n", PACKAGE_NAME, PACKAGE_VERSION);
-	printf("Report all bugs to %s.\n", PACKAGE_BUGREPORT);
-	printf("Using libcurl version: %s\n", curl_version());
-	printf("Using MySQL client version: %s\n", mysql_get_client_info());
-
-	//superloop
+{	//superloop
 	while (run_state == running) 
 	{	
 		//attempt to reconnect if we aren't connected.
-		if(!sql_is_connected()) {
+		if(!sql_is_connected()) 
+		{
 			sql_connect(configure_get_db_server(), configure_get_db_username(), configure_get_db_password());
 		}		
 
+		const char *url = "http://myanimelist.net/api/anime/search.xml?q=full+metal+alchemist";
+		char *out;
+
+		httpGetBasicAuthToMemory(&out, url, configure_get_mal_username(), configure_get_mal_password());
+		//printf("%s", out);
+		//Log(LOG_INFO, "%s", out);
+		free(out);
+		
 		//start dumping date from queue
-		if (sql_is_connected()) {
+		if (sql_is_connected()) 
+		{
 
 		}
 
@@ -305,6 +309,12 @@ int daemonize()
 
  	log_init();
  	Log(LOG_INFO, PACKAGE_NAME " is starting");
+
+ 	if (-1 == chdir("/")) {
+ 		Log(LOG_ERROR, "Failed to change directory to root.");
+ 		exit(0);
+ 	}
+
 
  	//handle signals
  	struct sigaction act;
