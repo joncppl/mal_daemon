@@ -1,6 +1,7 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 m4_include(libcurl.m4)
+m4_include(mysql.m4)
 AC_PREREQ([2.68])
 AC_INIT([mal_daemon], [0.1], [joncpl@gmail.com])
 AM_INIT_AUTOMAKE
@@ -29,6 +30,16 @@ AC_CHECK_HEADERS([ \
 	])
 	
 AC_CHECK_HEADER([pthread.h],[AC_DEFINE(PTHREAD_HAVE, [1] ,[ Define to 1 if you have the <pthread.h> header file])])
+
+MYSQL_CLIENT([],[client])
+CFLAGS="$CFLAGS $MYSQL_CLIENT_CFLAGS"
+LIBS="$LIBS $MYSQL_CLIENT_LIBS"
+
+PKG_CHECK_MODULES([LIBCONFIG], [libconfig >= 1.4],,
+	AC_MSG_ERROR([libconfig 1.4 or newer not found.])
+)
+CFLAGS="$CFLAGS $LIBCONFIG_CFLAGS"
+LIBS="$LIBS $LIBCONFIG_LIBS"
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

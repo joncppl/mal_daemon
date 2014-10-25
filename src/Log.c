@@ -133,9 +133,13 @@ void Log(int priority, const char *s, ...)
 			logPriorityDescp(priority));
 	vfprintf(log, s, ap);
 	fprintf(log, "\n");
-	free(datetime);
 
+	free(datetime);
 	END_LOCK
+
+	//print a version to stdout as well.
+	vprintf(s, ap);
+	printf("\n");
 
 	va_end(ap);
 }
